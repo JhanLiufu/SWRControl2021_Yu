@@ -13,6 +13,7 @@ from scipy import signal
 import numpy as np
 from numpy import fft
 from collections import deque
+import math
 
 #global lfp_sampling_rate
 lfp_sampling_rate = 1250
@@ -117,7 +118,7 @@ def calculate_rms(buffer):
     for k in buffer:
         square_summed += (k**2)
 
-    return square_summed/len(buffer)
+    return math.sqrt(square_summed/len(buffer))
 
 
 def detection_with_rms(buffer, low_cut, high_cut, threshold):
