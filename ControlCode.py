@@ -174,8 +174,7 @@ lfp_buffer = deque()
 decision_list = [False, False, False]
 
 counter = 0
-for i in range(2510):
-#while True:
+while True:
     ## Get lfp data
     current_sample = client.receive()
     current_time = current_sample['systemTimestamp']
