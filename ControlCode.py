@@ -14,9 +14,11 @@ import numpy as np
 from numpy import fft
 from collections import deque
 
-lfp_sampling_rate = 0
-lfp_sampling_period = 0
+#global lfp_sampling_rate
+lfp_sampling_rate = 1250
+lfp_sampling_period = (1/1250)*(10**9)
 fNQ = 600
+#global start_time
 start_time = 0
 
 def connect_to_trodes(local_server_address, count_per_lfp):
@@ -29,7 +31,9 @@ def connect_to_trodes(local_server_address, count_per_lfp):
     """
     client = subscribe_to_lfp(local_server_address)
     info = get_trodes_info(local_server_address)
+    global lfp_sampling_rate
     lfp_sampling_rate = info.request_timerate() / count_per_lfp
+    global lfp_sampling_period
     lfp_sampling_period = (1 / lfp_sampling_rate) * (10 ** 9) #convert to nanoseconds
 
     return client
@@ -128,6 +132,7 @@ def detection_with_rms(buffer, low_cut, high_cut, threshold):
     """
     filtered_buffer = bandpass_filter('butterworth', buffer, lfp_sampling_rate, 0, low_cut, high_cut)
     current_rms = calculate_rms(filtered_buffer)
+    print(current_rms)
     if current_rms >= threshold:
         return True
     else:
@@ -158,11 +163,19 @@ def detection_with_fft(buffer, fNQ, low_cut, high_cut, threshold):
     return {"fft_real": fft_real, "freq_axis": freq_axis}
 
 
+def set_start_time(start):
+    global start_time
+    start_time = start
+
+
 client = connect_to_trodes("tcp://127.0.0.1:49152", 20)
 lfp_buffer = deque()
+#should we also make decision_list a buffer queue?
+decision_list = [False, False, False]
 
 counter = 0
-while True:
+for i in range(2510):
+#while True:
     ## Get lfp data
     current_sample = client.receive()
     current_time = current_sample['systemTimestamp']
@@ -170,14 +183,19 @@ while True:
     lfp_buffer.append(current_data[0])
 
     if counter == 0:
-        start_time = current_time
+        set_start_time(current_time)
 
-    if counter < 2499:
+    if counter < 2500:
         counter = counter + 1
         continue
 
     recording_length = current_time - start_time
     lfp_buffer.popleft() #discards the least recent data point
-    detection_with_rms(lfp_buffer, 8, 12, 100) #100 is just a random input for threshold.
+    decision_list.append(detection_with_rms(lfp_buffer, 8, 12, 10000))
+
+    stimulation = False
+    for m in range(len(decision_list)-2, len(decision_list)):
+        stimulation = decision_list[m]
+
 
     counter += 1
