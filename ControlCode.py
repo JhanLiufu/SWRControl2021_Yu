@@ -14,6 +14,7 @@ import numpy as np
 from numpy import fft
 from collections import deque
 import math
+import threading
 
 #global lfp_sampling_rate
 lfp_sampling_rate = 1250
@@ -131,9 +132,8 @@ def detection_with_rms(buffer, low_cut, high_cut, threshold):
     :return: whether there is activity in freq range [low_cut, high_cut] or not
     :rtype: boolean
     """
-    filtered_buffer = bandpass_filter('butterworth', buffer, lfp_sampling_rate, 0, low_cut, high_cut)
+    filtered_buffer = bandpass_filter('butterworth', buffer, lfp_sampling_rate, 1, low_cut, high_cut)
     current_rms = calculate_rms(filtered_buffer)
-    print(current_rms)
     if current_rms >= threshold:
         return True
     else:
@@ -169,33 +169,45 @@ def set_start_time(start):
     start_time = start
 
 
-client = connect_to_trodes("tcp://127.0.0.1:49152", 20)
+def lfp_buffering(client, buffer):
+    counter = 0
+    while True:
+        current_sample = client.receive()
+        current_time = current_sample['systemTimestamp']
+        current_data = current_sample['lfpData']
+        buffer.append(current_data[0])
+
+        if counter == 0:
+            set_start_time(current_time)
+
+        if counter < 500:
+            counter = counter + 1
+            continue
+
+        buffer.popleft()  # discards the least recent data point
+        print(len(buffer))
+
+
+trodes_client = connect_to_trodes("tcp://127.0.0.1:49152", 20)
+print('1')
 lfp_buffer = deque()
-#should we also make decision_list a buffer queue?
 decision_list = [False, False, False]
 
-counter = 0
+buffering_thread = threading.Thread(target=lfp_buffering(trodes_client, lfp_buffer))
+print('2')
+#buffering_thread.start()
+
 while True:
-    ## Get lfp data
-    current_sample = client.receive()
-    current_time = current_sample['systemTimestamp']
-    current_data = current_sample['lfpData']
-    lfp_buffer.append(current_data[0])
 
-    if counter == 0:
-        set_start_time(current_time)
-
-    if counter < 2500:
-        counter = counter + 1
+    if len(lfp_buffer) <= 500:
         continue
 
-    recording_length = current_time - start_time
-    lfp_buffer.popleft() #discards the least recent data point
-    decision_list.append(detection_with_rms(lfp_buffer, 8, 12, 10000))
+    decision_list.append(detection_with_rms(lfp_buffer, 8, 12, 400))
 
-    stimulation = False
-    for m in range(len(decision_list)-2, len(decision_list)):
-        stimulation = decision_list[m]
+    stimulation = True
+    for m in range(len(decision_list)-3, len(decision_list)):
+        if not decision_list[m]:
+            stimulation = False
 
+    print(stimulation)
 
-    counter += 1
