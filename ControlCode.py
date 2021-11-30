@@ -169,13 +169,13 @@ def set_start_time(start):
     start_time = start
 
 
-def lfp_buffering(client, buffer):
+def lfp_buffering():
     counter = 0
     while True:
-        current_sample = client.receive()
+        current_sample = trodes_client.receive()
         current_time = current_sample['systemTimestamp']
         current_data = current_sample['lfpData']
-        buffer.append(current_data[0])
+        lfp_buffer.append(current_data[0])
 
         if counter == 0:
             set_start_time(current_time)
@@ -184,22 +184,19 @@ def lfp_buffering(client, buffer):
             counter = counter + 1
             continue
 
-        buffer.popleft()  # discards the least recent data point
-        print(len(buffer))
+        lfp_buffer.popleft()  # discards the least recent data point
 
 
 trodes_client = connect_to_trodes("tcp://127.0.0.1:49152", 20)
-print('1')
 lfp_buffer = deque()
 decision_list = [False, False, False]
 
-buffering_thread = threading.Thread(target=lfp_buffering(trodes_client, lfp_buffer))
-print('2')
-#buffering_thread.start()
+buffering_thread = threading.Thread(target=lfp_buffering)
+buffering_thread.start()
 
 while True:
 
-    if len(lfp_buffer) <= 500:
+    if len(lfp_buffer) < 500:
         continue
 
     decision_list.append(detection_with_rms(lfp_buffer, 8, 12, 400))
