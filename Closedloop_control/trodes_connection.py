@@ -6,6 +6,17 @@ from trodesnetwork import trodes
 from trodesnetwork import socket
 
 
+def call_statescript(hardware, function_num):
+    """
+    Call a ECU StateScript method of index function_num
+    :param hardware: trodes.hardware object
+    :param function_num: the index of StateScript funciton defined in Trodes
+    :return message: the message sent from trodes (unpacked by msgpack.unpackb) to see if the calling is successful
+    """
+    message = hardware.ecu_shortcut_message(function_num)
+    return message
+
+
 def connect_to_trodes(local_server_address, count_per_lfp):
     """
     Connect python client to trodes, get hardware sampling rate and calculate lfp sampling rate
@@ -16,10 +27,11 @@ def connect_to_trodes(local_server_address, count_per_lfp):
     """
     client = subscribe_to_lfp(local_server_address)
     info = get_trodes_info(local_server_address)
+    hardware = get_trodes_hardware(local_server_address)
     lfp_sampling_rate = info.request_timerate() / count_per_lfp
     lfp_sampling_period = (1 / lfp_sampling_rate) * (10 ** 9)
 
-    return client, lfp_sampling_rate, lfp_sampling_period
+    return client, hardware, lfp_sampling_rate, lfp_sampling_period
 
 
 def subscribe_to_lfp(local_server_address):
