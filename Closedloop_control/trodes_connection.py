@@ -22,16 +22,17 @@ def connect_to_trodes(local_server_address, count_per_lfp):
     Connect python client to trodes, get hardware sampling rate and calculate lfp sampling rate
     :param local_server_address: the tcp address of trodes server
     :param count_per_lfp: for how many samples one lfp package is sent
-    :return: lfp subscriber object, lfp sampling rate and lfp sampling period
-    :rtype: list [object, int, int]
+    :return: lfp subscriber object, trodes_hardware, trodes_inforequester, lfp sampling rate and lfp sampling period
+    :rtype: list [object, object, object, int, int]
     """
     client = subscribe_to_lfp(local_server_address)
     info = get_trodes_info(local_server_address)
     hardware = get_trodes_hardware(local_server_address)
+    info = get_trodes_info(local_server_address)
     lfp_sampling_rate = info.request_timerate() / count_per_lfp
     lfp_sampling_period = (1 / lfp_sampling_rate) * (10 ** 9)
 
-    return client, hardware, lfp_sampling_rate, lfp_sampling_period
+    return client, hardware, info, lfp_sampling_rate, lfp_sampling_period
 
 
 def subscribe_to_lfp(local_server_address):
