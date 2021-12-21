@@ -188,5 +188,5 @@ plt.grid(True)
 plt.show()
 
 fig2 = plt.figure()
-plt.bar([0, 1, 2],[Accuracy, Precision, Recall], width=0.8, bottom=None, align='center', data = None)
+plt.bar([0, 1, 2], [Accuracy, Precision, Recall], width=0.8, bottom=None, align='center', data=None)
 plt.show()
