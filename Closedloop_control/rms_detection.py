@@ -34,7 +34,5 @@ def detection_with_rms(buffer, low_cut, high_cut, lfp_sampling_rate, threshold):
     """
     filtered_buffer = bpf.bandpass_filter('butterworth', buffer, lfp_sampling_rate, 1, low_cut, high_cut)
     current_rms = calculate_rms(filtered_buffer)
-    if current_rms >= threshold:
-        return True
-    else:
-        return False
+    #print(current_rms)
+    return current_rms >= threshold

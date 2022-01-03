@@ -2,7 +2,7 @@
 Written by Mengzhan Liufu at Yu Lab, the University of Chicago, November 2021
 """""""""
 import time
-
+'''
 channel_id = 0
 
 
@@ -10,7 +10,7 @@ def input_channel_id():
     global channel_id
     channel_id = input("Input the index (not it's name) of the nTrode channel to listen to:")
     print('Listening to channel '+str(channel_id))
-
+'''
 
 def lfp_buffering(client, buffer, buffer_size):
     """
@@ -24,7 +24,7 @@ def lfp_buffering(client, buffer, buffer_size):
         current_sample = client.receive()
         current_time = current_sample['systemTimestamp']
         current_data = current_sample['lfpData']
-        buffer.append(current_data[channel_id])
+        buffer.append(current_data[0])
 
         if counter < buffer_size:
             counter = counter + 1

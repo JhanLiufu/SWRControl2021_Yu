@@ -5,7 +5,7 @@ trodes_py = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20)
 trodes_client = trodes_py[0]
 trodes_hardware = trodes_py[1]
 
-
+'''
 def subscribe_test(client):
     client.receive()
     current_sample = trodes_client.receive()
@@ -16,5 +16,10 @@ def subscribe_test(client):
 
 receive_thread = threading.Thread(target=subscribe_test, args=trodes_client)
 receive_thread.start()
+'''
 
+while True:
+    current_sample = trodes_client.receive()
+    current_data = current_sample['lfpData']
+    print(current_data)
 

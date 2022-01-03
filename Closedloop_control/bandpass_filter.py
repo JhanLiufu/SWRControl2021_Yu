@@ -1,6 +1,5 @@
 from scipy import signal
 
-
 def bandpass_filter(filter_name, flattened_array, sampling_freq, order, lowcut, highcut):
     """
     Return a dictionary of filtered lfp data
