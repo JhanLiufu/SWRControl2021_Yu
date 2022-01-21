@@ -62,7 +62,7 @@ The section guide here helps locate things in the notebook.
 - &nbsp;&nbsp;&nbsp;3.4 Offline(Hilbert) Detection
 - &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.4.1 Detect with Denoised Offline(Hilbert) Data
 - &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.4.2 Detect with Denoised Offline(Hilbert) Data (no denoising)
-- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.5 Offline(Hilbert) Deblipping
+- &nbsp;&nbsp;&nbsp;3.5 Offline(Hilbert) Deblipping
 - &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.5.1 Deblipping denoised Offline(Hilbert) data
 - &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.5.1 Deblipping denoised Offline(Hilbert) data (no denoising)
 - **4 Offline Processing with RMS**
