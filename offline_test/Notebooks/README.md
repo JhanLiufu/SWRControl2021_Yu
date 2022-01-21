@@ -76,6 +76,6 @@ The section guide here helps locate things in the notebook.
 - **6 Accuracy and Precision**
 - &nbsp;&nbsp;&nbsp;6.1 Online(RMS) vs. Offline(Hilbert)
 - &nbsp;&nbsp;&nbsp;6.2 Online(RMS) vs. Offline(RMS)
--**7 Lag Calculation**
+- **7 Lag Calculation**
 - &nbsp;&nbsp;&nbsp;7.1 Cross Correlation - Offline(Hilbert) and Online(RMS)
 - &nbsp;&nbsp;&nbsp;7.2 Cross Correlation - Offline(RMS) and Online(RMS)
