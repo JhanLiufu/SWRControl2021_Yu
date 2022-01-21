@@ -13,7 +13,7 @@ Using this fixed pattern and the notebook layout, all variable names should be p
 1. **Detection type**: **online**,**offline** or **noise**. **offline** means filtering the whole recording in ripple range first, and 
 **online** means creating buffers of a certain length at each sample point then filtering the buffers (our online detection algorithm).
 **noise** means filtering the raw data in noise range (500~600 Hz) in order to identify global noise events. 
-2. **processing method**: **hilbert** or **rms**. Offline ripple data is either processed with hilbert transformation or RMS transformation
+2. **processing method**: **hilbert** or **rms**. Offline ripple data is either processed with hilbert transformation or RMS estimation
 and then used as ground truth for calculations of accuracy and precision. Online detection uses RMS in real time.
 3. **description**: all data bands using either hilbert method or RMS method have many common modalities (i.e variables) like **_magnitude**,
 **_deblipped**, **_timetrue**, **_eventduration** etc. Here's a complete list of these arrays:
@@ -52,27 +52,27 @@ The section guide here helps locate things in the notebook.
 
 - **1 Import packages and load methods**
 - **2 Load Data and Initial Processing**
-- &nbsp;&nbsp;2.1 Load Data
-- &nbsp;&nbsp;2.2 Convert time frame
-- &nbsp;&nbsp;2.3 Filtering
+- &nbsp;&nbsp;&nbsp;2.1 Load Data
+- &nbsp;&nbsp;&nbsp;2.2 Convert time frame
+- &nbsp;&nbsp;&nbsp;2.3 Filtering
 - **3 Offline&Noise Processing with Hilbert**
-- &nbsp;&nbsp;3.1 Hilbert Transform
-- &nbsp;&nbsp;3.2 Noise Event Detection
-- &nbsp;&nbsp;3.3 Offline(Hilbert) Denoising
-- &nbsp;&nbsp;3.4 Offline(Hilbert) Detection
-- &nbsp;&nbsp;&nbsp;&nbsp;3.4.1 Detect with Denoised Offline(Hilbert) Data
-- &nbsp;&nbsp;&nbsp;&nbsp;3.4.2 Detect with Denoised Offline(Hilbert) Data (no denoising)
-- &nbsp;&nbsp;&nbsp;&nbsp;3.5 Offline(Hilbert) Deblipping
-- &nbsp;&nbsp;&nbsp;&nbsp;3.5.1 Deblipping denoised Offline(Hilbert) data
-- &nbsp;&nbsp;&nbsp;&nbsp;3.5.1 Deblipping denoised Offline(Hilbert) data (no denoising)
+- &nbsp;&nbsp;&nbsp;3.1 Hilbert Transform
+- &nbsp;&nbsp;&nbsp;3.2 Noise Event Detection
+- &nbsp;&nbsp;&nbsp;3.3 Offline(Hilbert) Denoising
+- &nbsp;&nbsp;&nbsp;3.4 Offline(Hilbert) Detection
+- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.4.1 Detect with Denoised Offline(Hilbert) Data
+- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.4.2 Detect with Denoised Offline(Hilbert) Data (no denoising)
+- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.5 Offline(Hilbert) Deblipping
+- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.5.1 Deblipping denoised Offline(Hilbert) data
+- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.5.1 Deblipping denoised Offline(Hilbert) data (no denoising)
 - **4 Offline Processing with RMS**
-- &nbsp;&nbsp;4.1 Offline RMS (all ripple data)
-- &nbsp;&nbsp;4.2 Offline(RMS) Detection
-- &nbsp;&nbsp;4.3 Offline(RMS) Deblipping
+- &nbsp;&nbsp;&nbsp;4.1 Offline RMS (all ripple data)
+- &nbsp;&nbsp;&nbsp;4.2 Offline(RMS) Detection
+- &nbsp;&nbsp;&nbsp;4.3 Offline(RMS) Deblipping
 - **5 Online RMS Processing**
-- &nbsp;&nbsp;5.1 Online RMS (buffers)
-- &nbsp;&nbsp;5.2 Online RMS Detection
-- &nbsp;&nbsp;5.3 Online RMS Deblipping
+- &nbsp;&nbsp;&nbsp;5.1 Online RMS (buffers)
+- &nbsp;&nbsp;&nbsp;5.2 Online RMS Detection
+- &nbsp;&nbsp;&nbsp;5.3 Online RMS Deblipping
 - **6 Accuracy and Precision**
-- &nbsp;&nbsp;6.1 Online(RMS) vs. Offline(Hilbert)
-- &nbsp;&nbsp;6.2 Online(RMS) vs. Offline(RMS)
+- &nbsp;&nbsp;&nbsp;6.1 Online(RMS) vs. Offline(Hilbert)
+- &nbsp;&nbsp;&nbsp;6.2 Online(RMS) vs. Offline(RMS)
