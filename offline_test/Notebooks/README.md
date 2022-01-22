@@ -22,6 +22,7 @@ and then used as ground truth for calculations of accuracy and precision. Online
 - ```_magnitude```: the raw data envelope of offline hilbert, offline RMS and online RMS
 - ```_avg```: the average value of _magnitude
 - ```_std```: the standard deviation of array _magnitude
+- ```_numstd```: number of standard deviation above average for determining threshold
 - ```_threshold```: the power threshold determined with _avg and _std for detection. Except for noise_hilbert_threshold, which has a fixed
  value
 - ```_zscore```: the z-scored version of _magnitude
