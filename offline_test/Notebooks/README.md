@@ -5,6 +5,15 @@ data or RMS-estimated data as ground truth. Relevant plots are also generated fo
 
 ---
 
+## Analysis Tips
+
+- Whether ```Offline(Hilbert)``` and ```Offline(RMS)``` detect roughly the same number of events?
+- Does this number make sense based on how frequent SWR events take place in reality?
+- Go through the plots: are the detected segments really SWR events?
+- Pay close attention to events detected by either Hilbert or RMS but not both; tweak _numstd and _lenthreshold accordingly
+
+---
+
 ## Variable Naming Pattern
 
 All variables (including lists, arrays and constants) in this notebook follow this naming pattern: ```[detection type]_[processing method]_[description]```.
