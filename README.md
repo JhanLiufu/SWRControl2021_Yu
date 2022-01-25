@@ -1,5 +1,5 @@
 # SWRControl2021_Yu
-Mengzhan (John) code for Closed Loop Control system of Sharp Wave Ripples in Hippocampus CA3 region at Yu Lab, the University of Chicago, Chicago
+Mengzhan (John) code for Closed Loop Control system of Sharp Wave Ripples in Hippocampus CA3 region at Yu Lab, University of Chicago
 
 ## OfflineAnalysis_Finale Documentation
 
