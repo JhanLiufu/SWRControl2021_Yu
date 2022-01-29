@@ -1,65 +1,148 @@
-# SWRControl2021_Yu
-Mengzhan (John) code for Closed Loop Control system of Sharp Wave Ripples in Hippocampus CA3 region at Yu Lab, University of Chicago
+# emkanalysis_clc_toolkit API reference
 
-## OfflineAnalysis_Finale Documentation
+**bandpass_filter**(filter_name, flattened_array, sampling_freq, order, lowcut, highcut):
 
-This notebook mainly serves to calculate the accuracy and precision of our online detection algorithm, using either hilbert transformed
-data or RMS-estimated data as ground truth. Relevant plots are also generated for the sake of checking.
+    Filter a signal array with bandpass
 
----
+    @param filter_name: the type of filter to use
+    @param flattened_array: 1D signal array to be filtered
+    @param sampling_freq: the sampling frequency with which the signal is collected
+    @param order:
+    @param lowcut: lower bound of the frequency band of interest
+    @param highcut: higher bound of the frequency band of interest
+    
+    @return y: the signal in frequency band [lowcut, highcut]
 
-### Analysis Tips
+**convert_time**(time_file):
 
-- Whether ```Offline(Hilbert)``` and ```Offline(RMS)``` detect roughly the same number of events?
-- Does this number make sense based on how frequent SWR events take place in reality?
-- Go through the plots: are the detected segments really SWR events?
-- Pay close attention to events detected by either Hilbert or RMS but not both; tweak _numstd and _lenthreshold accordingly
+    Convert trodes timestamps into seconds
 
----
+    @param time_file: trodes timestamps.dat source file
+    
+    @return np.array(time_data): numpy array of timestamps in seconds 
+    
+**hilbert_processing**(power_data):
 
-### Variable Naming Pattern
+    Apply Hilbert transformation to a power data series to get is magnitude envelope
 
-All variables (including lists, arrays and constants) in this notebook follow this naming pattern: ```[detection type]_[processing method]_[description]```.
-Using this fixed pattern and the notebook layout, all variable names should be predictable and easily trackable.
+    @param power_data: raw power data array
+    
+    @return hilbert_magnitude: magnitude envelope of power_data after hilbert transformation
 
-1. **Detection type**: **online**,**offline** or **noise**. **offline** means filtering the whole recording in ripple range first, and 
-**online** means creating buffers of a certain length at each sample point then filtering the buffers (our online detection algorithm).
-**noise** means filtering the raw data in noise range (500~600 Hz) in order to identify global noise events. 
-2. **processing method**: **hilbert** or **rms**. Offline ripple data is either processed with hilbert transformation or RMS estimation
-and then used as ground truth for calculations of accuracy and precision. Online detection uses RMS in real time.
-3. **description**: all data bands using either hilbert method or RMS method have many common modalities (i.e variables) like **_magnitude**,
-**_deblipped**, **_timetrue**, **_eventduration** etc. Here's a complete list of these arrays:
+**denoise**(power_data, time_data, noise_label, threshold):
 
-- ```_analytic```: this is the analytic signal array returned by Hilbert transformation
-- ```_magnitude```: the raw data envelope of offline hilbert, offline RMS and online RMS
-- ```_avg```: the average value of _magnitude
-- ```_std```: the standard deviation of array _magnitude
-- ```_numstd```: number of standard deviation above average for determining threshold
-- ```_threshold```: the power threshold determined with _avg and _std for detection. Except for noise_hilbert_threshold, which has a fixed
- value
-- ```_zscore```: the z-scored version of _magnitude
-- ```_decision```: arrays of True and False. Each element indicates whether its corresponding sample point crosses threshold or not
-- ```_decarr```: _decision lists transformed to np.array. Contain exactly the same elements as _decision
-- ```_stimulation```: arrats of True and False. Each element indicates stimulation status at each sample point (wait for three consecutive
- True decision to stimulation)
-- ```_stimarr```: _stimulation lists transformed to np.array
-- ```_denoised```: discarded elements in the **offline_hilbert_magnitude** list that are labelled as noise samples
-- ```_time```: arrays of timestamps, corresponding to offline_hilbert_denoised, offline_rms_magnitude and online_rms_magnitude
-- ```_raw```: an extra suffix besides the three. offline_hilbert_ variables with this tag are calculated without denoising
-- ```_changedtime```: array of timestamps where stimulation status changes (event onset and offset)
-- ```_truetime```: array of only the event onset timestamps from _changedtime
-- ```_eventduration```: array of event durations, calculated with pairs of onset timestamp and offset timestamp from _changedtime
-- ```_deblipped```: for offline_hilbert and online_rms, there are short-lived "blips" that come before real stimulation activities. 
-Timestamps in the _truetime list that correspond to events lasting less than _lenthreshold milliseconds are discarded
-- ```_lenthreshold```: the minimum event duration that we consider a real stimulation activity
-- ```diffbar```, ```bin_edges```: used to create histogram
-- ```_truepositive```: the timestamps of events which correctly respond to a ground truth event
-- ```_falsepositive```: the timestamps of events that do not math any ground truth event
-- ```_accuracy```, ```_precision```: as the names suggest
+    Remove data samples that are labeled as global noise from power series 
+
+    @param power_data: data sample array
+    @param time_data: timestamp array in seconds, match power_data in length
+    @param noise_label: T/F array of each sample labeled as noise or not, match power_data in length
+    @param threshold: a maximum value of power to be considered normal activity (instead of noise)
+    
+    @return denoised: array of samples without noise samples
+    @retun denoised_time: timestamp array in seconds, match denoised in length
+
+**detect**(magnitude, num_std, num_wait):
+
+    Detect threshold crossing events in a given power series
+
+    @param magnitude: power array for threshold-crossing events detection
+    @param num_std: number of standard deviation above average (of power array) for threshold to be
+    @param num_wait: the number of samples to wait before stimulating. i.e num_wait consecutive Trues then stimulate
+    
+    @return stimulation: numpy array of stimulation status (T/F) at each sample point in power array
+
+**calculate_rms**(buffer):
+
+    return the root mean-squared of a given array
+
+    @param buffer: any array or list of number
+
+    @return: the root mean-squared value of the array as a proxy for its power
+
+**online_rms_processing**(power_data, sampling_rate, time_data, buffer_length, lower_bound, upper_bound, threshold):
+
+    Process a given power array with stepwise (i.e online) RMS estimation
+
+    @param power_data: array of raw power across time
+    @param sampling_rate: 
+    @param time_data: array of power_data's timestamps in seconds
+    @param buffer_length: number of data samples for RMS estimation
+    @param lower_bound: lower bound of target frequency range 
+    @param upper_bound: upper bound of target frequency range
+    @param threshold: maximum RMS value to be considered
+    
+    @return rms_magnitude: array of RMS-processed power series
+    @return rms_time: array of rms_magnitude's timestamps in seconds
+
+**offline_rms_processing**(power_data, time_data, buffer_length, threshold):
+
+    Filter the whole given power array, then perform RMS estimation on buffer at each sample 
+
+    @param power_data: array of raw power across time
+    @param time_data: array of power_data's timestamps in seconds
+    @param buffer_length: number of data samples for RMS estimation
+    @param threshold: maximum RMS value to be considered
+    
+    @return rms_magnitude: array of RMS-processed power series
+    @return rms_time: array of rms_magnitude's timestamps in seconds
+
+**extract_events**(stimulation, timestamps):
+
+    Extract timestamps of event onset, offset and duration array from stimulation status array
+
+    @param stimulation: array of stimulation status (T/F) at each timestamp
+    @param timestamps: array of timestamps in seconds that match the stimulation array
+    
+    @return np.array(changedtime): numpy array of timestamps of event onset and offset (alternative) in seconds
+    @return np.array(eventduration): numpy array of event durations in milliseconds
+    @return np.array(truetime): numpy array of timestamps in seconds of event onset only 
+
+**deblip_with_duration**(truetime,eventduration,threshold):
+
+    Remove the onset timestamps that belong to noise events based on event duration
+
+    @param truetime: array of timestamps of event onset
+    @param eventduration: array of event duration in milliseconds, should match array truetime in length
+    @param threshold: minimum event duration to be considered a real event
+    
+    @return np.array(deblipped): array of timestamps in seconds without "blips"
+
+**deblip_with_frequency**(truetime,threshold):
+
+    Remove the onset timestamps that belong to noise events based on event frequency
+
+    @param truetime: array of timestamps of event onset
+    @param threshold: minimum time gap between two events for the second one to be considered a real event
+    
+    @return np.array(deblipped): array of timestamps in seconds without "blips"
+
+**accuracy_precision_calculation**(detection_series_1, detection_series_2, window_width):
+
+    detection_series_2 is used as ground truth reference to calculate the accuracy and precision of detection_series_1. 
+    For a particular event in detection_series_2, if there exists an event in detection_series_1 that matches the one
+    in series_2, we mark the one in series_2 (ground truth) as detected and the one in series_1 as truepositive (TP). 
+    If an event in series_1 doesn't match any series_2 event, it's marked as falsepositive(FP).
+    
+    @param detection_series_1: timestamp (of the starts of events) arrays in seconds 
+    @param detection_series_2: timestamp (of the starts of events) arrays in seconds
+    @param window_width: range of detection time difference allowed in seconds
+    
+    @return accuracy: percentage of series_2 events detected in series_1
+    @return precision: percentage of correct detections (TP) in series_1
+    @return (len(detection_series_2)-len(truepositive)): number of series_2 events unmatched by any series_1 event
+
+**lag_distribution**(time_series_1,time_series_2):
+
+    Calculate general time lag distribution between two time series with cross correlation
+
+    @param time_series_1: array of timestamps in seconds
+    @param time_series_2: array of timestamps in seconds
+    
+    @return lag_distribution: array of cross-correlated time lags in milliseconds
 
 --- 
 
-### Notebook Section Guide
+# OfflineAnalysis_Finale Notebook Section Guide
 
 The section guide here helps locate things in the notebook. 
 
@@ -88,7 +171,10 @@ The section guide here helps locate things in the notebook.
 - &nbsp;&nbsp;&nbsp;5.3 Online RMS Deblipping
 - **6 Accuracy and Precision**
 - &nbsp;&nbsp;&nbsp;6.1 Online(RMS) vs. Offline(Hilbert)
-- &nbsp;&nbsp;&nbsp;6.2 Online(RMS) vs. Offline(RMS)
+- &nbsp;&nbsp;&nbsp;6.2 Online(RMS) vs. Offline(Hilbert)_raw
+- &nbsp;&nbsp;&nbsp;6.3 Online(RMS) vs. Offline(RMS)
 - **7 Lag Calculation**
 - &nbsp;&nbsp;&nbsp;7.1 Cross Correlation - Offline(Hilbert) and Online(RMS)
-- &nbsp;&nbsp;&nbsp;7.2 Cross Correlation - Offline(RMS) and Online(RMS)
+- &nbsp;&nbsp;&nbsp;7.1 Cross Correlation - Offline(Hilbert)_raw and Online(RMS)
+- &nbsp;&nbsp;&nbsp;7.3 Cross Correlation - Offline(RMS) and Online(RMS)
+- **8 Hyperparameter Sensitivity Test**
