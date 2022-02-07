@@ -19,25 +19,24 @@ def call_statescript(hardware, function_num):
     return message
 
 
-def connect_to_trodes(local_server_address, count_per_lfp):
+def connect_to_trodes(local_server_address, count_per_lfp, data_type):
     """
     Connect python client to trodes server, get socket subscriber, info requester and
     hardware objects; sampling rate and period
 
     :param local_server_address: the tcp address of trodes server
     :param count_per_lfp: for how many samples one lfp package is sent
+    :param data_type: lfp, spikes, camera, or dio
 
-    :return: lfp subscriber object, trodes_hardware, info requester, sampling rate and sampling period
-    :rtype: list [object, object, object, int, int]
+    :return: lfp subscriber object, trodes_hardware, info requester, sampling rate
     """
-    client = subscribe_to_data(local_server_address)
+    client = subscribe_to_data(data_type, local_server_address)
     info = get_trodes_info(local_server_address)
     hardware = get_trodes_hardware(local_server_address)
     info = get_trodes_info(local_server_address)
     sampling_rate = info.request_timerate() / count_per_lfp
-    sampling_period = (1 / sampling_rate) * (10 ** 9)
 
-    return client, hardware, info, sampling_rate, sampling_period
+    return client, hardware, info, sampling_rate
 
 
 def subscribe_to_data(data_type, local_server_address):

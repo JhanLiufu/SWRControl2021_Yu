@@ -9,7 +9,7 @@ from determine_threshold import determine_threshold
 import threading
 
 # Connect to trodes
-trodes_client, trodes_hardware, trodes_info, sampling_rate, sampling_period = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20)
+trodes_client, trodes_hardware, trodes_info, sampling_rate = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20, 'lfp')
 
 # Parameters
 stimulation_num_wait = 15
