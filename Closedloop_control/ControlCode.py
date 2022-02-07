@@ -1,53 +1,56 @@
+"""""""""
+Written by Mengzhan Liufu at Yu Lab, University of Chicago
+"""""""""
+
 import trodes_connection as tc
-import rms_detection as rd
-import lfp_buffering as lb
-import SyncTimestamp as st
-from collections import deque
+from rms_detection import detect_with_rms
+from data_buffering import data_buffering
+from determine_threshold import determine_threshold
 import threading
-import time
-import numpy as np
 
-trodes_py = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20)
-trodes_client = trodes_py[0]
-trodes_hardware = trodes_py[1]
-trodes_info = trodes_py[2]
-lfp_sampling_rate = trodes_py[3]
-lfp_sampling_period = trodes_py[4]
+# Connect to trodes
+trodes_client, trodes_hardware, trodes_info, sampling_rate, sampling_period = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20)
 
-time_params = st.timestamp_sync(trodes_client, 2000)
+# Parameters
+stimulation_num_wait = 15
+buffer_size = 150
+frequency_lowcut = 140  # low bound of target frequency range
+frequency_highcut = 250  # high bound of target frequency range
+noise_lowcut = 500  # low bound of noise range (usually a high freq band)
+noise_highcut = 600  # high bound of noise range
+stimulation_num_std = 3
+noise_num_std = 6
 
-# these parameters need to be saved for timestamp conversion and alignment in analysis
-trodes_PC_dif = time_params[0]
-system_dif = time_params[1]
+# Determine threshold
+# the number and aliases of channels input here should be exactly the same as those for data_buffering()
+# lists and dicts are mutable types, tuples and numbers are not
+target_threshold, noise_threshold, data_buffer = determine_threshold(trodes_client, sampling_rate, frequency_lowcut, \
+                                                                     frequency_highcut, noise_lowcut, noise_highcut, \
+                                                                     stimulation_num_std, noise_num_std, 45000, 0, 1, 2)
 
-lfp_buffer = deque()
-buffering_thread = threading.Thread(target=lb.lfp_buffering, args=(trodes_client, lfp_buffer, 500))
-buffering_thread.start()
+# Start data buffering
+if __name__ == '__main__':
+    buffering_thread = threading.Thread(target=data_buffering, args=(trodes_client, data_buffer, buffer_size, \
+                                                                     noise_lowcut, noise_highcut, noise_threshold,\
+                                                                     0, 1, 2))
+    buffering_thread.start()
 
 stimulation_status = False
-decision_list = [False, False, False]
+decision_list = [False] * stimulation_num_wait
 
-with open('/media/nvme0/Data/clc/data/stim_03_unix.txt', 'a') as py_data:
-    py_data.write(str(trodes_PC_dif)+"\n")
-    # the first line tells the unix time difference between time_ns() and trodes
-    py_data.write(str(system_dif)+"\n")
-    # the second line tells how many nanoseconds do 20 sample counts correspond to
-    while True:
+# Start detecting
+while True:
+    decision_list.append(detect_with_rms(data_buffer, 300))
+    decision_list.pop(0)
+    stimulation = True
+    for m in decision_list:
+        if not m:
+            stimulation = False
 
-        if len(lfp_buffer) < 500:
-            continue
+    if (stimulation_status is False) and (stimulation is True):
+        tc.call_statescript(trodes_hardware, 1)
+        stimulation_status = True
 
-        decision_list.append(rd.detection_with_rms(lfp_buffer, 140, 250, lfp_sampling_rate, 200))
-        stimulation = True
-        for m in range(len(decision_list)-3, len(decision_list)):
-            if not decision_list[m]:
-                stimulation = False
-
-        if (stimulation_status is False) and (stimulation is True):
-            py_data.write(str(time.time_ns())+"\n")
-            stim_msg = tc.call_statescript(trodes_hardware, 1)
-            stimulation_status = True
-
-        if (stimulation_status is True) and (stimulation is False):
-            tc.call_statescript(trodes_hardware, 2)
-            stimulation_status = False
+    if (stimulation_status is True) and (stimulation is False):
+        tc.call_statescript(trodes_hardware, 2)
+        stimulation_status = False

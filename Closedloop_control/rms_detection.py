@@ -1,9 +1,9 @@
 """""""""
-Written by Mengzhan Liufu at Yu Lab, the University of Chicago, November 2021
+Written by Mengzhan Liufu at Yu Lab, University of Chicago
 """""""""
 
 import math
-import bandpass_filter as bpf
+from bandpass_filter import bandpass_filter
 
 
 def calculate_rms(buffer):
@@ -21,18 +21,18 @@ def calculate_rms(buffer):
     return math.sqrt(square_summed/len(buffer))
 
 
-def detection_with_rms(buffer, low_cut, high_cut, lfp_sampling_rate, threshold):
+def detect_with_rms(buffer, sampling_freq, target_lowcut, target_highcut, threshold):
     """
-    :param buffer: the buffer of lfp data at current iteration
-    :param low_cut: the lower bound of the frequency band of interest
-    :param high_cut: the upper bound of the frequency band of interest
-    :param lfp_sampling_rate: the sampling rate of trodes lfp subscriber
+    :param buffer: the buffer of data
+    :param sampling_freq: data sampling rate
+    :param target_lowcut: the lower bound of target frequency range
+    :param target_highcut: the higher bound of target frequency range
     :param threshold: the threshold of power for making decision/judgement
 
-    :return: whether there is activity in freq range [low_cut, high_cut] or not
+    :return: whether the activity in freq range [low_cut, high_cut] crosses threshold
     :rtype: boolean
     """
-    filtered_buffer = bpf.bandpass_filter('butterworth', buffer, lfp_sampling_rate, 1, low_cut, high_cut)
-    current_rms = calculate_rms(filtered_buffer)
-    #print(current_rms)
+
+    current_rms = calculate_rms(bandpass_filter('butterworth', buffer, sampling_freq, 1, \
+                                                   target_lowcut, target_highcut))
     return current_rms >= threshold
