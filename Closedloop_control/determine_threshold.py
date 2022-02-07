@@ -4,8 +4,7 @@ Written by Mengzhan Liufu at Yu Lab, University of Chicago
 
 from bandpass_filter import bandpass_filter
 import numpy as np
-from scipy import signal
-
+from rms_detection import calculate_rms
 '''
 Although the analysis in determine_threshold is not time critical, since we are using part of target_denoised to 
 initialize data_buffer, the analysis here should also be as fast as possible.
@@ -33,7 +32,7 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
     :return target_denoised[:][len(initial_length)-buffer_size:]: initial data_buffer of size len(channel)xbuffer_size
     '''
 
-    # raw data in initial period
+    # acquire raw data in initial period
     initial_data = np.zeros(len(channel), initial_length)
     for i in range(0, initial_length):
         current_sample = client.receive()
@@ -49,17 +48,14 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
     for i in range(len(channel)):
         target_range_data[i, :] = np.array(bandpass_filter('butterworth', np.array(initial_data[i, :]), sampling_freq, 1, \
                                                          target_lowcut, target_highcut))
-        noise_range_data[i, :] = np.array(bandpass_filter('butterworth', np.array(initial_data[i, :]), sampling_freq, 1, \
+        '''
+        This should actually be np.abs(signal.hilbert()) but
+        '''
+        noise_range_data[i, :] = np.abs(bandpass_filter('butterworth', np.array(initial_data[i, :]), sampling_freq, 1, \
                                                          noise_lowcut, noise_highcut))
 
     # determine noise threshold
-    '''
-    Need faster way of calculating average of noise range data among channels
-    '''
-    noise_range_avg = np.zeros(initial_length)
-    for i in range(len(channel)):
-        noise_range_avg += np.abs(signal.hilbert(np.array(noise_range_data[i, :])))
-    noise_range_avg /= len(channel)
+    noise_range_avg = np.average(noise_range_data, axis=0)
     noise_threshold = np.mean(noise_range_avg) + noise_numstd*np.std(noise_range_avg)
 
     # denoise target range data
@@ -78,7 +74,7 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
                 us from averaging them. Need to solve this because the noise edges (as we've seen in offline analysis)
                 have high power too
                 '''
-                target_denoised.append(target_range_data[i])
+                target_denoised.append(target_range_data[i, j])
     target_denoised = np.array(target_denoised).reshape(len(channel), initial_length).tolist()
     '''
     Numpy arrays don't have append() feature. Part of target_denoised will be returned to initialize data_buffer, and 
@@ -86,14 +82,15 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
     '''
 
     # determine target range threshold with denoised data
+    target_denoised_avg = np.average(target_denoised, axis=0)
     '''
-    Need faster way of calculating average of noise range data among channels
+    The stepwise calculate_rms() here will take a lot of time. Tried multiprocessing it, but calculate_rms() somehow
+    doesn't work with array segments in multiprocessing framework. Need to solve this!
     '''
-    target_denoised_avg = np.zeros(initial_length)
-    for i in range(len(channel)):
-        target_denoised_avg += target_denoised[i, :]
-    target_threshold = np.mean(target_denoised) + target_numstd*np.std(target_denoised)
-
+    initial_rms_avg = []
+    for i in range(buffer_size, initial_length):
+        initial_rms_avg.append(calculate_rms(target_denoised_avg[i-buffer_size:i]))
+    target_threshold = np.mean(initial_rms_avg) + target_numstd*np.std(initial_rms_avg)
     # return the noise and target range thresholds and initial data_buffer
     '''
     The reason we are returning an initial buffer here is that the data_buffering() module needs to do online

@@ -3,7 +3,6 @@ Written by Mengzhan Liufu at Yu Lab, the University of Chicago, November 2021
 """""""""
 
 from bandpass_filter import bandpass_filter
-import multiprocessing as mp
 import numpy as np
 
 
@@ -29,10 +28,10 @@ def calculate_noise(filter_type, flattened_array, sampling_rate, order, lowcut, 
     array that has nothing to do with the input data_buffer. Alternatively, we can copy data_buffer to a new list first
     and append to that copy. Not sure which way's faster
     '''
-    return current_noise_data[-1]
+    return abs(current_noise_data[-1])  # return absolute value here
 
 
-def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noise_highcut, noise_threshold, *channel):
+def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noise_highcut, noise_threshold, buffer_pool, *channel):
     """
     Receive lfp data, determine whether influenced by global noise, then update data_buffer accordingly
 
@@ -43,6 +42,7 @@ def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noi
     :param noise_lowcut: the lower bound of noise (usually a high freq band of no biological events)
     :param noise_highcut: the higher bound of noise (usually a high freq band of no biological events)
     :param noise_threshold: if the power in noise range exceeds this value, current sample is global noise
+    :param buffer_pool: multiprocessing Pool object
     :param channel: unknown number of channel aliases
     """
 
@@ -50,9 +50,6 @@ def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noi
         raise ValueError('Number of channels should be consistent')
     if len(buffer[0]) != buffer_size:
         raise ValueError('Buffer size should be consistent')
-
-    # Initialize multiprocessor group
-    buffer_pool = mp.Pool(mp.cpu_count())
 
     while True:
         # receive the latest sample sent by trodes server
@@ -81,7 +78,3 @@ def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noi
         for i in range(len(channel)):
             buffer[i].append(current_data[channel[i]])
             buffer[i].pop(0)
-
-    '''
-    Potential problem: processes not properly terminated. there should be 'pool.close()' and 'pool.join()'
-    '''

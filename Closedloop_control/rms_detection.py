@@ -4,6 +4,7 @@ Written by Mengzhan Liufu at Yu Lab, University of Chicago
 
 import math
 from bandpass_filter import bandpass_filter
+import numpy as np
 
 
 def calculate_rms(buffer):
@@ -21,18 +22,18 @@ def calculate_rms(buffer):
     return math.sqrt(square_summed/len(buffer))
 
 
-def detect_with_rms(buffer, sampling_freq, target_lowcut, target_highcut, threshold):
+def detect_with_rms(buffer, sampling_freq, target_lowcut, target_highcut, threshold, Pool):
     """
     :param buffer: the buffer of data
     :param sampling_freq: data sampling rate
     :param target_lowcut: the lower bound of target frequency range
     :param target_highcut: the higher bound of target frequency range
     :param threshold: the threshold of power for making decision/judgement
+    :param Pool: multiprocessing Pool object
 
     :return: whether the activity in freq range [low_cut, high_cut] crosses threshold
     :rtype: boolean
     """
-
-    current_rms = calculate_rms(bandpass_filter('butterworth', buffer, sampling_freq, 1, \
-                                                   target_lowcut, target_highcut))
-    return current_rms >= threshold
+    results = [Pool.apply_async(calculate_rms, args=(bandpass_filter('butterworth', i, sampling_freq, 1, target_lowcut, \
+                                                                     target_highcut))) for i in buffer]
+    return np.mean([r.get for r in results]) >= threshold

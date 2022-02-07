@@ -32,7 +32,6 @@ for i in range(20):
     current_data = current_sample['lfpData']
     print(current_data)
 
-
 '''
 Test multiprocessing function
 '''
@@ -42,6 +41,7 @@ if __name__ == '__main__':
         test_pool.apply_async(mp_test, args=[i])
     test_pool.close()
     test_pool.join()
+
 
 
 
