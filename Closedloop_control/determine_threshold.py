@@ -12,7 +12,7 @@ initialize data_buffer, the analysis here should also be as fast as possible.
 
 
 def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, noise_lowcut, noise_highcut, target_numstd, \
-                        noise_numstd, initial_length, buffer_size, *channel):
+                        noise_numstd, initial_length, buffer_size, Pool, *channel):
     '''
     Determine target range threshold and global noise threshold for online deteection
     :param client: socket subscriber object
@@ -25,6 +25,7 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
     :param noise_numstd:
     :param initial_length: # of samples used for threshold determination
     :param buffer_size: # of samples in buffer
+    :param Pool: multiprocessing Pool object
     :param channel: unknown number of channel aliases
 
     :return target_threshold
@@ -41,45 +42,25 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
             initial_data[j, i] = current_data[channel[j]]
 
     # store target range data and noise range data separately
-    target_range_data = np.zeros(len(channel), initial_length)
-    noise_range_data = np.zeros(len(channel), initial_length)
-
-    # filter to target range and noise range for each channel
-    for i in range(len(channel)):
-        target_range_data[i, :] = np.array(bandpass_filter('butterworth', np.array(initial_data[i, :]), sampling_freq, 1, \
-                                                         target_lowcut, target_highcut))
-        '''
-        This should actually be np.abs(signal.hilbert()) but
-        '''
-        noise_range_data[i, :] = np.abs(bandpass_filter('butterworth', np.array(initial_data[i, :]), sampling_freq, 1, \
-                                                         noise_lowcut, noise_highcut))
+    target_results = [Pool.apply_async(bandpass_filter, args=('butterworth', np.array(initial_data[i, :]), sampling_freq, \
+                                                              1, target_lowcut, target_highcut)) for i in range(len(channel))]
+    target_range_data = [tr.get() for tr in target_results]
+    noise_results = [Pool.apply_async(bandpass_filter, args=('butterworth', np.array(initial_data[i, :]), sampling_freq, \
+                                                              1, noise_lowcut, noise_highcut)) for i in range(len(channel))]
+    noise_range_data = np.abs([nr.get() for nr in noise_results])  # this should actually have signal.hilbert() but
 
     # determine noise threshold
     noise_range_avg = np.average(noise_range_data, axis=0)
     noise_threshold = np.mean(noise_range_avg) + noise_numstd*np.std(noise_range_avg)
 
     # denoise target range data
-    target_denoised = []
     '''
-    The reason this is a 1D list rather than 2D target_denoied = [[]]*len(channel) is that somehow in 2D list if you 
-    append to one row, that value also get appended to other rows (at least for initially empty lists). Working with
-    2D list is better, then we don't need to do reshape() and tolist() later to convert np.array() back to list
+    actually should have another condition here (target power < 1000) to make sure that the noise edges
+    are removed too. But then the length of each row is not guaranteed to be the same, which prevents
+    us from averaging them. Need to solve this because the noise edges (as we've seen in offline analysis)
+    have high power too
     '''
-    for i in range(len(channel)):
-        for j in range(initial_length):
-            if noise_range_avg[j] < noise_threshold:
-                '''
-                actually should have another condition here (target power < 1000) to make sure that the noise edges
-                are removed too. But then the length of each row is not guaranteed to be the same, which prevents
-                us from averaging them. Need to solve this because the noise edges (as we've seen in offline analysis)
-                have high power too
-                '''
-                target_denoised.append(target_range_data[i, j])
-    target_denoised = np.array(target_denoised).reshape(len(channel), initial_length).tolist()
-    '''
-    Numpy arrays don't have append() feature. Part of target_denoised will be returned to initialize data_buffer, and 
-    we need to append samples to data_buffer(). 
-    '''
+    target_denoised = np.array([np.array(target_range_data[i, :])[noise_range_avg < noise_threshold] for i in range(len(channel))])
 
     # determine target range threshold with denoised data
     target_denoised_avg = np.average(target_denoised, axis=0)
@@ -91,11 +72,8 @@ def determine_threshold(client, sampling_freq, target_lowcut, target_highcut, no
     for i in range(buffer_size, initial_length):
         initial_rms_avg.append(calculate_rms(target_denoised_avg[i-buffer_size:i]))
     target_threshold = np.mean(initial_rms_avg) + target_numstd*np.std(initial_rms_avg)
+
     # return the noise and target range thresholds and initial data_buffer
-    '''
-    The reason we are returning an initial buffer here is that the data_buffering() module needs to do online
-    denoising, which means it needs to run bandpass_filter(), which can't be applied to an empty list
-    '''
-    return target_threshold, noise_threshold, target_denoised[:][len(initial_length)-buffer_size:]
+    return target_threshold, noise_threshold, target_denoised[:, len(initial_length)-buffer_size:].tolist()
 
 

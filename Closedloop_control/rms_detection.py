@@ -36,4 +36,7 @@ def detect_with_rms(buffer, sampling_freq, target_lowcut, target_highcut, thresh
     """
     results = [Pool.apply_async(calculate_rms, args=(bandpass_filter('butterworth', i, sampling_freq, 1, target_lowcut, \
                                                                      target_highcut))) for i in buffer]
+    '''
+    Does callback run faster than result_object.get() ?
+    '''
     return np.mean([r.get for r in results]) >= threshold
