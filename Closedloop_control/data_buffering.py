@@ -31,7 +31,7 @@ def calculate_noise(filter_type, flattened_array, sampling_rate, order, lowcut, 
     return abs(current_noise_data[-1])  # return absolute value here
 
 
-def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noise_highcut, noise_threshold, buffer_pool, *channel):
+def data_buffering(buffer_pool, client, buffer, buffer_size, sampling_freq, noise_lowcut, noise_highcut, noise_threshold, *channel):
     """
     Receive lfp data, determine whether influenced by global noise, then update data_buffer accordingly
 
@@ -45,7 +45,6 @@ def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noi
     :param buffer_pool: multiprocessing Pool object
     :param channel: unknown number of channel aliases
     """
-
     if len(buffer) != len(channel):
         raise ValueError('Number of channels should be consistent')
     if len(buffer[0]) != buffer_size:
@@ -68,7 +67,13 @@ def data_buffering(client, buffer, buffer_size, sampling_freq, noise_lowcut, noi
         faster
         '''
         # calculate average power in noise range across channels and determine noisy or not
-        if np.mean([r.get() for r in result_objects]) > noise_threshold:
+        buffer_decision = np.mean([r.get() for r in result_objects]) > noise_threshold
+
+        print('Current noise-decision:')
+        print(buffer_decision)
+        print('\n')
+
+        if buffer_decision:
             continue
 
         # append new data to buffer and pop the least recent one

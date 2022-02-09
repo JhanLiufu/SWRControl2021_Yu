@@ -34,9 +34,15 @@ def detect_with_rms(buffer, sampling_freq, target_lowcut, target_highcut, thresh
     :return: whether the activity in freq range [low_cut, high_cut] crosses threshold
     :rtype: boolean
     """
-    results = [Pool.apply_async(calculate_rms, args=(bandpass_filter('butterworth', i, sampling_freq, 1, target_lowcut, \
-                                                                     target_highcut))) for i in buffer]
-    '''
-    Does callback run faster than result_object.get() ?
-    '''
-    return np.mean([r.get for r in results]) >= threshold
+    results_objects = [Pool.apply_async(calculate_rms, args=([bandpass_filter('butterworth', i, sampling_freq, 1, target_lowcut, \
+                                                                     target_highcut)])) for i in buffer]
+
+    results = [r.get() for r in results_objects]
+    avg = np.mean(results)
+
+    print('Current channel-wise RMS: ')
+    print(results)
+    print('\n')
+
+    return avg >= threshold
+    # return np.mean([r.get for r in results]) >= threshold

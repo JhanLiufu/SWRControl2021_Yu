@@ -26,20 +26,22 @@ noise_threshold = 300  # default noise range detection threshold
 
 # Determine threshold
 # the number and aliases of channels input here should be exactly the same as those for data_buffering()
-'''
-We shouldn't need the __main__ condition but just in case
-'''
 if __name__ == '__main__':
     my_pool = mp.Pool(mp.cpu_count())
-    target_threshold, noise_threshold, data_buffer = determine_threshold(trodes_client, sampling_rate, frequency_lowcut, \
+    target_threshold, noise_threshold, data_buffer = determine_threshold(my_pool, trodes_client, sampling_rate, frequency_lowcut, \
                                                                          frequency_highcut, noise_lowcut, noise_highcut, \
-                                                                         stimulation_num_std, noise_num_std, 45000, my_pool, \
-                                                                         0, 1, 2)
+                                                                         stimulation_num_std, noise_num_std, 45000, buffer_size, \
+                                                                         0, 2, 3)
+print('Target range threshold:')
+print(target_threshold)
+print('Noise range threshold:')
+print(noise_threshold)
+print('\n')
 
 # Start data buffering
-buffering_thread = threading.Thread(target=data_buffering, args=(trodes_client, data_buffer, buffer_size, \
+buffering_thread = threading.Thread(target=data_buffering, args=(my_pool, trodes_client, data_buffer, buffer_size, sampling_rate, \
                                                                      noise_lowcut, noise_highcut, noise_threshold, \
-                                                                     my_pool, 0, 1, 2))
+                                                                     0, 2, 3))
 buffering_thread.start()
 
 # Start detecting
@@ -47,6 +49,10 @@ stimulation_status = False
 decision_list = [False] * stimulation_num_wait
 
 while True:
+    print('Curren data buffer: ')
+    print(data_buffer[0][:10])
+    print('\n')
+
     decision_list.append(detect_with_rms(data_buffer, sampling_rate, frequency_lowcut, \
                                          frequency_highcut, target_threshold, my_pool))
     decision_list.pop(0)
@@ -55,12 +61,15 @@ while True:
         if not m:
             stimulation = False
 
+    # print(stimulation)
     if (stimulation_status is False) and (stimulation is True):
-        tc.call_statescript(trodes_hardware, 1)
+        # tc.call_statescript(trodes_hardware, 1)
+        print('Turn On')
         stimulation_status = True
 
     if (stimulation_status is True) and (stimulation is False):
-        tc.call_statescript(trodes_hardware, 2)
+        # tc.call_statescript(trodes_hardware, 2)
+        print('Turn Off')
         stimulation_status = False
 
         '''

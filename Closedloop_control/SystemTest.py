@@ -11,18 +11,18 @@ def mp_test(a):
     print('Multiprocessor iteration '+str(a))
 
 
-trodes_py = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20)
+trodes_py = tc.connect_to_trodes("tcp://127.0.0.1:49152", 20, 'lfp')
 trodes_client = trodes_py[0]
 trodes_hardware = trodes_py[1]
 
-'''
-Call statescript function 2 every 5 seconds for 10 times. Function 2 should be something
-noticeable, say a buzzer or an LED light.
-'''
-for i in range(10):
-    msg_returned = tc.call_statescript(trodes_hardware, 2)
-    print(msg_returned)
-    time.sleep(5)
+# '''
+# Call statescript function 2 every 5 seconds for 10 times. Function 2 should be something
+# noticeable, say a buzzer or an LED light.
+# '''
+# for i in range(10):
+#     msg_returned = tc.call_statescript(trodes_hardware, 2)
+#     print(msg_returned)
+#     time.sleep(5)
 
 '''
 Stream data from trodes server
