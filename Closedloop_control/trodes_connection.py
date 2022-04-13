@@ -1,7 +1,6 @@
-"""""""""
+'''
 Written by Mengzhan Liufu at Yu Lab, University of Chicago
-"""""""""
-
+'''
 from trodesnetwork import trodes
 from trodesnetwork import socket
 
@@ -31,12 +30,11 @@ def connect_to_trodes(local_server_address, count_per_lfp, data_type):
     :return: lfp subscriber object, trodes_hardware, info requester, sampling rate
     """
     client = subscribe_to_data(data_type, local_server_address)
-    info = get_trodes_info(local_server_address)
     hardware = get_trodes_hardware(local_server_address)
     info = get_trodes_info(local_server_address)
     sampling_rate = info.request_timerate() / count_per_lfp
 
-    return client, hardware, info, sampling_rate
+    return client, hardware, sampling_rate
 
 
 def subscribe_to_data(data_type, local_server_address):
